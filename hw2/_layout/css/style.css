@@ -192,3 +192,64 @@ header nav .search input:focus {
     border-bottom: none;
     border-radius: 6px 6px 0 0;
 }
+
+
+/* 2-3 */
+article .title {
+    color: var(--caption-color);
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+article .information {
+    color: #888;
+    font-size: 0.75rem;
+    padding: 2px 0 2px 0;
+}
+
+/* полосочка слева */
+article .body {
+    border-left: 3px solid #ccc;
+    padding-left: 1rem;
+}
+
+/* скрепочки в списке */
+article .attachment li {
+    background: url(../img/paperclip-16x16.png) no-repeat left center;
+    padding-left: 1.5rem;
+    margin: 0.25rem 0;
+}
+article .attachment {
+    padding-left: 0;
+    color: #888;
+}
+
+/* футер */
+article .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+article .footer .left,
+article .footer .right {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+article .footer .right img {
+    padding-left: 0.5rem;
+}
+
+article .footer .positive-score {
+    color: green;
+    font-weight: bold;
+}
+article .footer .negative-score {
+    color: red;
+    font-weight: bold;
+}
