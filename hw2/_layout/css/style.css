@@ -124,3 +124,44 @@ aside section .footer a {
 aside section .footer a:after {
     content: " →";
 }
+
+
+/* 2-1 */
+/* позиция поиска */
+header nav .search {
+    float: right;
+    padding: 0 4px 0 4px;
+}
+header nav {
+    overflow: hidden;
+}
+header nav ul {
+    display: inline-block;
+    /* увеличиваем высоту линии, потому что иначе кнопки выше,
+    чем поиск, отображаются, потому что поиск увеличивает высоту элемента */
+    line-height: 1.6rem;
+}
+
+header nav .search input {
+    /* лупа */
+    background: #f7f7f7 url(../img/search-16x16.png) no-repeat 0.1rem center;
+
+    /* граница */
+    border: 1px solid var(--border-color);
+    font-size: 12px;
+    height: 1.6rem;
+    box-sizing: border-box;
+
+    /* сдвиг текста за лупу хд */
+    padding-left: 1.5rem;
+}
+
+header nav .search input:focus {
+    /* тень */
+    outline: none;
+    border-color: #4b8ee4;
+    box-shadow: 0 0 2px 0 #4b8ee4;
+}
+
+
+/* 2-1 */
