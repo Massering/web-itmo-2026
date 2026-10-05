@@ -164,4 +164,31 @@ header nav .search input:focus {
 }
 
 
-/* 2-1 */
+/* 2-2 */
+.datatable table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+}
+
+.datatable tbody tr:nth-child(2n-1) {
+    background: #f7f7f7;
+}
+
+.datatable th, .datatable td {
+    text-align: center;
+    padding: 0.5em 0 0.5em 0;
+    border: 1px solid #ccc;
+    min-width: 2em;
+
+    font-size: 12px;
+}
+
+.datatable .caption {
+    font-size: 13px;
+    background: #e7e7e7;
+    padding: 0.4em;
+    border: 1px solid #ccc;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+}
