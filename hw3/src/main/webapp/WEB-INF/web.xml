@@ -28,4 +28,14 @@
         <url-pattern>*.js</url-pattern>
         <url-pattern>*.html</url-pattern>
     </servlet-mapping>
+
+    <servlet>
+        <servlet-name>MessageServlet</servlet-name>
+        <servlet-class>ru.itmo.wp.servlet.MessageServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>MessageServlet</servlet-name>
+        <url-pattern>/message/*</url-pattern>
+    </servlet-mapping>
 </web-app>
