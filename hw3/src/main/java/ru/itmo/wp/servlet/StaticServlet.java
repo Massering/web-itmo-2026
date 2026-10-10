@@ -15,6 +15,7 @@ public class StaticServlet extends HttpServlet {
 
     @Override
     public void init() {
+        // запоминаем путь
         String real = getServletContext().getRealPath("/static");
         if (real == null) {
             return;
@@ -37,25 +38,55 @@ public class StaticServlet extends HttpServlet {
             return;
         }
 
-        if (srcStaticDir != null) {
-            Path srcFile = srcStaticDir.resolve("." + uri).normalize();
-            if (srcFile.startsWith(srcStaticDir) && Files.isRegularFile(srcFile)) {
-                response.setContentType(getServletContext().getMimeType(srcFile.getFileName().toString()));
-                try (OutputStream outputStream = response.getOutputStream()) {
-                    Files.copy(srcFile, outputStream);
-                }
-                return;
+        // просто разбиваем по плюсам и циклом проходим
+        String[] parts = uri.split("\\+");
+
+        File[] files = new File[parts.length];
+        Path[] srcFiles = new Path[parts.length];
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i];
+            if (!part.startsWith("/")) {
+                part = "/" + part;
             }
+            srcFiles[i] = null;
+            files[i] = null;
+
+            if (srcStaticDir != null) {
+                Path f = srcStaticDir.resolve("." + part).normalize();
+                if (f.startsWith(srcStaticDir) && Files.isRegularFile(f)) {
+                    srcFiles[i] = f;
+                    continue;
+                }
+            }
+            String real = getServletContext().getRealPath("/static" + part);
+            if (real != null) {
+                File f = new File(real);
+                if (f.isFile()) {
+                    files[i] = f;
+                    continue;
+                }
+            }
+            // ни в src, ни в target/hw3 не нашли - 404
+            response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            return;
         }
 
-        File file = new File(getServletContext().getRealPath("/static" + uri));
-        if (file.isFile()) {
-            response.setContentType(getServletContext().getMimeType(file.getName()));
-            try (OutputStream outputStream = response.getOutputStream()) {
-                Files.copy(file.toPath(), outputStream);
+        // MIME-тип делаем по первому файлу
+        String firstName = (srcFiles[0] != null)
+                ? srcFiles[0].getFileName().toString()
+                : files[0].getName();
+        String contentType = getServletContext().getMimeType(firstName);
+        response.setContentType(contentType != null ? contentType : "application/octet-stream");
+        response.setHeader("Cache-Control", "no-store");
+
+        try (OutputStream out = response.getOutputStream()) {
+            for (int i = 0; i < parts.length; i++) {
+                if (srcFiles[i] != null) {
+                    Files.copy(srcFiles[i], out);
+                } else {
+                    Files.copy(files[i].toPath(), out);
+                }
             }
-        } else {
-            response.sendError(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 }
