@@ -10,6 +10,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -43,10 +44,16 @@ public class FrontServlet extends HttpServlet {
                     + templateDir + "]");
         }
         configuration.setDefaultEncoding(StandardCharsets.UTF_8.name());
+
+        // ВАЖНО: отключаем автоматический выбор локализованных шаблонов
+        configuration.setLocalizedLookup(false);
+
         configuration.setTemplateExceptionHandler(debug ? TemplateExceptionHandler.HTML_DEBUG_HANDLER :
                 TemplateExceptionHandler.RETHROW_HANDLER);
         configuration.setLogTemplateExceptions(false);
         configuration.setWrapUncheckedExceptions(true);
+        configuration.setCacheStorage(new freemarker.cache.NullCacheStorage());
+        configuration.setTemplateUpdateDelayMilliseconds(0);
 
         return configuration;
     }
@@ -73,6 +80,7 @@ public class FrontServlet extends HttpServlet {
 
     private void process(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        updateLanguage(request);    // task 2
         Route route = Route.newRoute(request);
         try {
             process(route, request, response);
@@ -130,7 +138,20 @@ public class FrontServlet extends HttpServlet {
             }
         }
 
-        Template template = newTemplate(pageClass.getSimpleName() + ".ftlh");
+        String lang = null;
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            lang = (String) session.getAttribute(SESSION_LANG);
+        }
+
+        System.out.println(">>> pageClass=" + pageClass.getSimpleName()
+                + " lang=" + lang
+                + " sessionLang=" + (request.getSession(false) == null
+                ? null
+                : request.getSession(false).getAttribute("lang")));
+
+        Template template = newTemplate(pageClass.getSimpleName(), lang);
+
         response.setContentType("text/html");
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         try {
@@ -204,34 +225,51 @@ public class FrontServlet extends HttpServlet {
         return args;
     }
 
-    private Template newTemplate(String templateName) throws ServletException {
-        Template template = null;
+    /**
+     * Загружает шаблон с учётом языка из сессии.
+     * Если lang != null и lang != "en", сначала пробует <baseName>_<lang>.ftlh,
+     * иначе/если не нашёл — <baseName>.ftlh.
+     */
+    private Template newTemplate(String baseName, String lang) throws ServletException {
+        if (lang != null && !"en".equals(lang)) {
+            Template localized = tryLoadTemplate(baseName + "_" + lang + ".ftlh");
+            if (localized != null) {
+                System.out.println(">>> LOADED: " + localized.getSourceName());
+                return localized;
+            }
+        }
+        Template template = tryLoadTemplate(baseName + ".ftlh");
+        if (template == null) {
+            throw new ServletException("Can't find template [templateName=" + baseName + ".ftlh" + "]");
+        }
+        System.out.println(">>> LOADED: " + template.getSourceName());
+        return template;
+    }
 
+    /**
+     * Пытается загрузить шаблон: сначала из src, потом из target.
+     * Если шаблона нет ни там, ни там — возвращает null.
+     */
+    private Template tryLoadTemplate(String templateName) throws ServletException {
         if (sourceConfiguration != null) {
             try {
-                template = sourceConfiguration.getTemplate(templateName);
+                return sourceConfiguration.getTemplate(templateName);
             } catch (TemplateNotFoundException ignored) {
-                // No operations.
+                // fall through to targetConfiguration
             } catch (IOException e) {
-                throw new ServletException("Can't load template [templateName=" + templateName + "]", e);
+                throw new ServletException("Can't load template " + templateName, e);
             }
         }
-
-        if (template == null && targetConfiguration != null) {
+        if (targetConfiguration != null) {
             try {
-                template = targetConfiguration.getTemplate(templateName);
+                return targetConfiguration.getTemplate(templateName);
             } catch (TemplateNotFoundException ignored) {
-                // No operations.
+                // fall through to null
             } catch (IOException e) {
-                throw new ServletException("Can't load template [templateName=" + templateName + "]", e);
+                throw new ServletException("Can't load template " + templateName, e);
             }
         }
-
-        if (template == null) {
-            throw new ServletException("Can't find template [templateName=" + templateName + "]");
-        }
-
-        return template;
+        return null;
     }
 
     private static class Route {

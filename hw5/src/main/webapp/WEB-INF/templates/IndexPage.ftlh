@@ -2,5 +2,5 @@
 <#import "./common.ftlh" as c>
 
 <@c.page>
-    Hello, ${name33}!
+    Hello, ${name}!
 </@c.page>
