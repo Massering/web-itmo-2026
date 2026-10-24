@@ -94,15 +94,9 @@ public class FrontServlet extends HttpServlet {
             throw new NotFoundException();
         }
 
-        Method method = null;
-        for (Class<?> clazz = pageClass; method == null && clazz != null; clazz = clazz.getSuperclass()) {
-            try {
-                method = clazz.getDeclaredMethod(route.getAction(), HttpServletRequest.class, Map.class);
-            } catch (NoSuchMethodException ignored) {
-                // No operations.
-            }
-        }
-
+        // Ищем action-метод по имени, без требования к сигнатуре,
+        // с обходом предков и интерфейсов (включая default-методы).
+        Method method = findActionMethod(pageClass, route.getAction());
         if (method == null) {
             throw new NotFoundException();
         }
@@ -118,8 +112,9 @@ public class FrontServlet extends HttpServlet {
 
         Map<String, Object> view = new HashMap<>();
         method.setAccessible(true);
+        Object[] args = buildArguments(method, request, view);
         try {
-            method.invoke(page, request, view);
+            method.invoke(page, args);
         } catch (IllegalAccessException e) {
             throw new ServletException("Can't invoke action method [pageClass="
                     + pageClass + ", method=" + method + "]");
@@ -146,6 +141,67 @@ public class FrontServlet extends HttpServlet {
                         + pageClass + ", action=" + method + "]", e);
             }
         }
+    }
+
+    /**
+     * Ищет action-метод по имени.
+     * Обходит класс, всех его предков и все реализованные интерфейсы.
+     */
+    private Method findActionMethod(Class<?> pageClass, String actionName) {
+        for (Class<?> clazz = pageClass; clazz != null; clazz = clazz.getSuperclass()) {
+            Method method = findInClass(clazz, actionName);
+            if (method != null) {
+                return method;
+            }
+            for (Class<?> iface : clazz.getInterfaces()) {
+                method = findInInterface(iface, actionName);
+                if (method != null) {
+                    return method;
+                }
+            }
+        }
+        return null;
+    }
+
+    private Method findInClass(Class<?> clazz, String name) {
+        for (Method method : clazz.getDeclaredMethods()) {
+            if (method.getName().equals(name)) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+    private Method findInInterface(Class<?> iface, String name) {
+        for (Method method : iface.getDeclaredMethods()) {
+            if (method.getName().equals(name)) {
+                return method;
+            }
+        }
+        for (Class<?> parent : iface.getInterfaces()) {
+            Method method = findInInterface(parent, name);
+            if (method != null) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Строит массив аргументов в порядке, который требует сам метод.
+     * Map - view, HttpServletRequest - request
+     */
+    private Object[] buildArguments(Method method, HttpServletRequest request, Map<String, Object> view) {
+        Class<?>[] types = method.getParameterTypes();
+        Object[] args = new Object[types.length];
+        for (int i = 0; i < types.length; i++) {
+            if (types[i] == HttpServletRequest.class) {
+                args[i] = request;
+            } else if (types[i] == Map.class) {
+                args[i] = view;
+            }
+        }
+        return args;
     }
 
     private Template newTemplate(String templateName) throws ServletException {
@@ -228,6 +284,16 @@ public class FrontServlet extends HttpServlet {
             }
 
             return new Route(className, action);
+        }
+    }
+
+    private static final String LANG_PARAM = "lang";
+    private static final String SESSION_LANG = "lang";
+
+    private void updateLanguage(HttpServletRequest request) {
+        String lang = request.getParameter(LANG_PARAM);
+        if (lang != null && lang.matches("[a-z]{2}")) {
+            request.getSession().setAttribute(SESSION_LANG, lang);
         }
     }
 }

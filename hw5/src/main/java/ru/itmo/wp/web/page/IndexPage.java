@@ -5,7 +5,7 @@ import java.util.Map;
 
 @SuppressWarnings({"unused", "RedundantSuppression"})
 public class IndexPage {
-    private void action(HttpServletRequest request, Map<String, Object> view) {
+    private void action(Map<String, Object> view) {
         view.put("name", "gera");
     }
 }
