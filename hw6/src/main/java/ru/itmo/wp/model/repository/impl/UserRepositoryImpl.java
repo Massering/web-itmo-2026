@@ -151,4 +151,17 @@ public class UserRepositoryImpl implements UserRepository {
             throw new RepositoryException("Can't save User.", e);
         }
     }
+
+    @Override
+    public long findCount() {
+        try (Connection connection = DATA_SOURCE.getConnection()) {
+            try (PreparedStatement statement = connection.prepareStatement("SELECT COUNT(*) FROM `User`");
+                 ResultSet resultSet = statement.executeQuery()) {
+                resultSet.next();
+                return resultSet.getLong(1);
+            }
+        } catch (SQLException e) {
+            throw new RepositoryException("Can't count User.", e);
+        }
+    }
 }

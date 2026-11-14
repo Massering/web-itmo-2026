@@ -9,16 +9,17 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 @SuppressWarnings({"unused"})
-public class LogoutPage {
+public class LogoutPage extends Page {
     private final EventService eventService = new EventService();
 
-    private void action(HttpServletRequest request, Map<String, Object> view) {
+    @Override
+    public void action(HttpServletRequest request, Map<String, Object> view) {
         User user = (User) request.getSession().getAttribute("user");
         if (user != null) {
             eventService.save(user.getId(), EventType.LOGOUT);
         }
         request.getSession().removeAttribute("user");
-        request.getSession().setAttribute("message", "Good bye. Hope to see you soon!");
+        setMessage("Good bye. Hope to see you soon!");
         throw new RedirectException("/index");
     }
 }

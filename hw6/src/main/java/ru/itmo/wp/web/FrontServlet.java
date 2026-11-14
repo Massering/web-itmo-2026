@@ -3,13 +3,13 @@ package ru.itmo.wp.web;
 import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import freemarker.template.*;
-import ru.itmo.wp.model.domain.User;
 import ru.itmo.wp.model.exception.ValidationException;
 import ru.itmo.wp.web.annotation.Json;
 import ru.itmo.wp.web.exception.NotFoundException;
 import ru.itmo.wp.web.exception.RedirectException;
 import ru.itmo.wp.web.page.IndexPage;
 import ru.itmo.wp.web.page.NotFoundPage;
+import ru.itmo.wp.web.page.Page;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -141,21 +141,20 @@ public class FrontServlet extends HttpServlet {
         }
 
         String acceptRequestHeader = request.getHeader("Accept");
-        // Ответ в JSON, если метод помечен @Json или клиент прислал Accept: application/json.
         boolean json = method.getAnnotation(Json.class) != null
                 || (acceptRequestHeader != null && acceptRequestHeader.startsWith(APPLICATION_JSON_MIME_TYPE));
 
-        Object page;
+        Page page;
         try {
             //noinspection deprecation
-            page = pageClass.newInstance();
+            page = (Page) pageClass.newInstance();
         } catch (InstantiationException | IllegalAccessException e) {
             throw new ServletException("Can't create page [pageClass=" + pageClass + "].", e);
         }
 
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         Map<String, Object> view = new HashMap<>();
-        putUser(request, view);
+        page.before(request, view);
 
         try {
             method.setAccessible(true);
@@ -187,6 +186,8 @@ public class FrontServlet extends HttpServlet {
             } else {
                 throw new ServletException("Unable to run action [pageClass=" + pageClass + ", method=" + method + "].", e);
             }
+        } finally {
+            page.after(request, view);
         }
 
         if (json) {
@@ -205,13 +206,6 @@ public class FrontServlet extends HttpServlet {
     private void writeJson(HttpServletResponse response, Map<String, Object> view) throws IOException {
         response.setContentType(APPLICATION_JSON_MIME_TYPE);
         response.getWriter().print(new Gson().toJson(view));
-    }
-
-    private void putUser(HttpServletRequest request, Map<String, Object> view) {
-        User user = (User) request.getSession().getAttribute("user");
-        if (user != null) {
-            view.put("user", user);
-        }
     }
 
     private static final class Route {

@@ -85,4 +85,8 @@ public class UserService {
     private String getPasswordSha(String password) {
         return Hashing.sha256().hashBytes((PASSWORD_SALT + password).getBytes(StandardCharsets.UTF_8)).toString();
     }
+
+    public long findCount() {
+        return userRepository.findCount();
+    }
 }

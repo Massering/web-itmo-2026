@@ -12,16 +12,12 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 @SuppressWarnings({"unused"})
-public class EnterPage {
+public class EnterPage extends Page {
     private final UserService userService = new UserService();
     private final EventService eventService = new EventService();
 
-    private void action(HttpServletRequest request, Map<String, Object> view) {
-        // No operations.
-    }
-
     @Json
-    private void enter(HttpServletRequest request, Map<String, Object> view) throws ValidationException {
+    public void enter(HttpServletRequest request, Map<String, Object> view) throws ValidationException {
         String loginOrEmail = request.getParameter("loginOrEmail");
         String password = request.getParameter("password");
 
@@ -31,7 +27,7 @@ public class EnterPage {
         eventService.save(user.getId(), EventType.ENTER);
 
         request.getSession().setAttribute("user", user);
-        request.getSession().setAttribute("message", "Hello, " + user.getLogin());
+        setMessage("Hello, " + user.getLogin());
         throw new RedirectException("/index");
     }
 }
