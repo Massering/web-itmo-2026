@@ -11,7 +11,7 @@ public interface UserRepository {
 
     User findByEmail(String email);
 
-    User findByLoginAndPasswordSha(String login, String passwordSha);
+    User findByLoginOrEmailAndPasswordSha(String loginOrEmail, String passwordSha);
 
     List<User> findAll();
 

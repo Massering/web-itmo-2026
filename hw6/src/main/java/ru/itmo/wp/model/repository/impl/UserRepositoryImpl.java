@@ -62,12 +62,13 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public User findByLoginAndPasswordSha(String login, String passwordSha) {
+    public User findByLoginOrEmailAndPasswordSha(String loginOrEmail, String passwordSha) {
         try (Connection connection = DATA_SOURCE.getConnection()) {
             try (PreparedStatement statement = connection.prepareStatement(
-                    "SELECT * FROM `User` WHERE `login`=? AND `passwordSha`=?")) {
-                statement.setString(1, login);
-                statement.setString(2, passwordSha);
+                    "SELECT * FROM `User` WHERE (`login`=? OR `email`=?) AND `passwordSha`=?")) {
+                statement.setString(1, loginOrEmail);
+                statement.setString(2, loginOrEmail);
+                statement.setString(3, passwordSha);
                 try (ResultSet resultSet = statement.executeQuery()) {
                     return toUser(statement.getMetaData(), resultSet);
                 }
