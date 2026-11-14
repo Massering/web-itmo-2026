@@ -10,3 +10,9 @@ CREATE TABLE `User` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_User_login` (`login`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
+
+-- Задача 1: email пользователя (уникальный, обязательный)
+ALTER TABLE `User` ADD COLUMN `email` VARCHAR(255) NULL;
+UPDATE `User` SET `email` = CONCAT('user', `id`, '@example.local') WHERE `email` IS NULL;
+ALTER TABLE `User` MODIFY COLUMN `email` VARCHAR(255) NOT NULL,
+    ADD UNIQUE KEY `uk_User_email` (`email`);
